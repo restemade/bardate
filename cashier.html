@@ -4,44 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Бар | Кассир</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #000; color: white; padding: 10px; }
+    h1 { text-align: center; }
+    .order { background: #111; padding: 10px; margin-bottom: 10px; border-radius: 10px; }
+    button { padding: 5px 10px; margin-top: 5px; }
+  </style>
 </head>
 <body>
-  <h2>📥 Входящие заказы</h2>
+  <h1>📋 Заказы</h1>
   <div id="orders"></div>
 
   <script>
+    const ref = firebase.database().ref("orders");
     const ordersDiv = document.getElementById("orders");
 
-    db.ref("orders").on("child_added", (snap) => {
-      const data = snap.val();
-      const key = snap.key;
+    ref.on("child_added", snapshot => {
+      const data = snapshot.val();
+      const date = new Date(data.timestamp).toLocaleString("ru-RU");
+      const div = document.createElement("div");
+      div.className = "order";
 
-      const card = document.createElement("div");
-      card.className = "product";
-      card.innerHTML = `
-        <h3>👤 ${data.user}</h3>
-        <ul>${data.cart.map(item => `<li>${item.name} - ${item.price} ₸</li>`).join('')}</ul>
-        <b>Итого: ${data.total} ₸</b><br>
-        <button onclick="completeOrder('${key}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">✅ Завершить</button>
+      let items = "";
+      data.cart.forEach(item => {
+        items += `<li>${item.name} × ${item.count} — ${item.price * item.count} ₸</li>`;
+      });
+
+      div.innerHTML = `
+        <h3>${data.user} — ${data.total} ₸</h3>
+        <small>${date}</small>
+        <ul>${items}</ul>
+        <button onclick="completeOrder(this)">✅ Завершить</button>
       `;
-      ordersDiv.prepend(card);
+
+      ordersDiv.prepend(div);
     });
 
-    function completeOrder(key, orderData) {
-      // Отправка в архив — имитация сохранения локально в date.json (файл создается вручную с сервера)
-      const completed = JSON.parse(localStorage.getItem("completedOrders") || "[]");
-      completed.push(orderData);
-      localStorage.setItem("completedOrders", JSON.stringify(completed));
-
-      // Удаление из активных
-      db.ref("orders/" + key).remove();
-
-      alert("Заказ завершен и сохранен в архив!");
-      location.reload();
+    function completeOrder(btn) {
+      const block = btn.closest(".order");
+      block.remove();
     }
   </script>
 </body>
