@@ -1,3 +1,4 @@
+<!-- 🔁 Buyer.html с Firebase + Server fetch + звук + счётчик + splash -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -17,7 +18,7 @@
     #splash {
       position: fixed;
       inset: 0;
-      background: url('apple-splash-1125x2436-dark.png') no-repeat center center;
+      background: url('apple-splash-1125x2436-dark.png') center center no-repeat;
       background-size: cover;
       z-index: 9999;
     }
@@ -30,48 +31,15 @@
       flex-direction: column;
       gap: 10px;
     }
-    input {
-      padding: 10px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: none;
-      width: 80vw;
-      max-width: 300px;
+    input, button {
+      padding: 10px; font-size: 18px;
+      border-radius: 8px; border: none;
+      width: 80vw; max-width: 300px;
     }
-    button {
-      padding: 10px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: none;
-      background: #444;
-      color: white;
-      width: 80vw;
-      max-width: 300px;
-    }
-    .products {
-      max-height: 45vh;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-    .product {
-      background: #111;
-      padding: 10px;
-      margin-bottom: 5px;
-      border-radius: 8px;
-    }
-    .cart {
-      max-height: 30vh;
-      overflow-y: auto;
-      background: #111;
-      padding: 10px;
-      border-top: 1px solid #333;
-    }
-    .product button {
-      margin: 0 3px;
-    }
-    .main {
-      padding: 10px;
-    }
+    .main { padding: 10px; }
+    .products { max-height: 45vh; overflow-y: auto; }
+    .product { background: #111; margin-bottom: 6px; padding: 10px; border-radius: 8px; }
+    .cart { max-height: 30vh; overflow-y: auto; background: #111; padding: 10px; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -140,8 +108,8 @@ function renderProducts(list) {
     const el = document.createElement("div");
     el.className = "product";
     el.innerHTML = `<b>${p.name}</b><br>${p.price} ₸<br>
-    <button onclick='changeQty(${JSON.stringify(p)}, -1)'>➖</button>
-    <button onclick='changeQty(${JSON.stringify(p)}, 1)'>➕</button>`;
+      <button onclick='changeQty(${JSON.stringify(p)}, -1)'>➖</button>
+      <button onclick='changeQty(${JSON.stringify(p)}, 1)'>➕</button>`;
     container.appendChild(el);
   });
 }
@@ -184,12 +152,22 @@ function sendOrder() {
     total: cart.reduce((s, p) => s + p.price * p.count, 0),
     timestamp: Date.now()
   };
+
+  // Firebase
   db.ref("orders").push(order);
-  document.getElementById("ping").play();
-  alert("Отправлено!");
-  cart = [];
-  renderCart();
-  resetTimer();
+
+  // Server
+  fetch("http://localhost:5000/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(order)
+  }).then(res => res.json()).then(() => {
+    document.getElementById("ping").play();
+    alert("Отправлено!");
+    cart = [];
+    renderCart();
+    resetTimer();
+  }).catch(() => alert("Ошибка сервера: не удалось отправить"));
 }
 
 function resetTimer() {
