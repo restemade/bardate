@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Бар | Кассир</title>
-  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="icon" href="assets/icon-512.png">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
@@ -41,15 +43,26 @@
         <h3>${data.user} — ${data.total} ₸</h3>
         <small>${date}</small>
         <ul>${items}</ul>
-        <button onclick="completeOrder(this)">✅ Завершить</button>
+        <button onclick='completeOrder(this, ${JSON.stringify(data)})'>✅ Завершить</button>
       `;
 
       ordersDiv.prepend(div);
     });
 
-    function completeOrder(btn) {
+    function completeOrder(btn, order) {
       const block = btn.closest(".order");
       block.remove();
+
+      // Отправим в Telegram
+      fetch("https://api.telegram.org/bot8132090842:AAE3z3SNMV2z8V4ord_YE7zfo0uPLrL86lo/sendMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: "@humbleloungee",
+          text: `✅ Заказ подтвержден от ${order.user}\nСумма: ${order.total} ₸\n` +
+                order.cart.map(i => `• ${i.name} × ${i.count}`).join("\n")
+        })
+      });
     }
   </script>
 </body>
