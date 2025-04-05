@@ -29,11 +29,16 @@
     const archiveRef = firebase.database().ref("archive");
     const ordersDiv = document.getElementById("orders");
 
+    const orderElements = {};
+
     ref.on("child_added", snapshot => {
       const key = snapshot.key;
       const data = snapshot.val();
-      const date = new Date(data.timestamp).toLocaleString("ru-RU");
 
+      // Если элемент уже был удалён — не рендерим
+      if (orderElements[key]) return;
+
+      const date = new Date(data.timestamp).toLocaleString("ru-RU");
       const div = document.createElement("div");
       div.className = "order";
       div.dataset.key = key;
@@ -51,6 +56,16 @@
       `;
 
       ordersDiv.prepend(div);
+      orderElements[key] = div;
+    });
+
+    // Удаляем заказ из DOM при его удалении из Firebase
+    ref.on("child_removed", snapshot => {
+      const key = snapshot.key;
+      if (orderElements[key]) {
+        orderElements[key].remove();
+        delete orderElements[key];
+      }
     });
 
     function completeOrder(key, order, date) {
@@ -61,7 +76,6 @@
         order.cart.map(i => `- ${i.name} ${i.count} (${i.price * i.count} ₸)`).join("\n") +
         `\n\n💰 Итого: ${order.total} ₸`;
 
-      // отправка в Telegram
       fetch("https://api.telegram.org/bot8132090842:AAE3z3SNMV2z8V4ord_YE7zfo0uPLrL86lo/sendMessage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,13 +85,9 @@
         })
       });
 
-      // отправка в archive + удаление из orders
+      // перенос в архив и удаление
       firebase.database().ref("archive").push(order);
       firebase.database().ref("orders/" + key).remove();
-
-      // удалить с экрана
-      const block = document.querySelector(`.order[data-key='${key}']`);
-      if (block) block.remove();
     }
   </script>
 </body>
