@@ -36,31 +36,36 @@
 
       let items = "";
       data.cart.forEach(item => {
-        items += `<li>${item.name} × ${item.count} — ${item.price * item.count} ₸</li>`;
+        items += `<li>${item.name} × ${item.count} (${item.price * item.count} ₸)</li>`;
       });
 
       div.innerHTML = `
         <h3>${data.user} — ${data.total} ₸</h3>
         <small>${date}</small>
         <ul>${items}</ul>
-        <button onclick='completeOrder(this, ${JSON.stringify(data)})'>✅ Завершить</button>
+        <button onclick='completeOrder(this, ${JSON.stringify(data)}, \`${date}\`)'>✅ Завершить</button>
       `;
 
       ordersDiv.prepend(div);
     });
 
-    function completeOrder(btn, order) {
+    function completeOrder(btn, order, date) {
       const block = btn.closest(".order");
       block.remove();
 
-      // Отправим в Telegram
+      const message =
+        `✅ Заказ подтвержден\n` +
+        `📥 От ${order.user}\n` +
+        `🕒 ${date}\n` +
+        order.cart.map(i => `- ${i.name} ${i.count} (${i.price * i.count} ₸)`).join("\n") +
+        `\n\n💰 Итого: ${order.total} ₸`;
+
       fetch("https://api.telegram.org/bot8132090842:AAE3z3SNMV2z8V4ord_YE7zfo0uPLrL86lo/sendMessage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: "@humbleloungee",
-          text: `✅ Заказ подтвержден от ${order.user}\nСумма: ${order.total} ₸\n` +
-                order.cart.map(i => `• ${i.name} × ${i.count}`).join("\n")
+          text: message
         })
       });
     }
