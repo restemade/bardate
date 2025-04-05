@@ -26,13 +26,17 @@
 
   <script>
     const ref = firebase.database().ref("orders");
+    const archiveRef = firebase.database().ref("archive");
     const ordersDiv = document.getElementById("orders");
 
     ref.on("child_added", snapshot => {
+      const key = snapshot.key;
       const data = snapshot.val();
       const date = new Date(data.timestamp).toLocaleString("ru-RU");
+
       const div = document.createElement("div");
       div.className = "order";
+      div.dataset.key = key;
 
       let items = "";
       data.cart.forEach(item => {
@@ -43,16 +47,13 @@
         <h3>${data.user} — ${data.total} ₸</h3>
         <small>${date}</small>
         <ul>${items}</ul>
-        <button onclick='completeOrder(this, ${JSON.stringify(data)}, \`${date}\`)'>✅ Завершить</button>
+        <button onclick='completeOrder("${key}", ${JSON.stringify(data)}, \`${date}\`)'>✅ Завершить</button>
       `;
 
       ordersDiv.prepend(div);
     });
 
-    function completeOrder(btn, order, date) {
-      const block = btn.closest(".order");
-      block.remove();
-
+    function completeOrder(key, order, date) {
       const message =
         `✅ Заказ подтвержден\n` +
         `📥 От ${order.user}\n` +
@@ -60,6 +61,7 @@
         order.cart.map(i => `- ${i.name} ${i.count} (${i.price * i.count} ₸)`).join("\n") +
         `\n\n💰 Итого: ${order.total} ₸`;
 
+      // отправка в Telegram
       fetch("https://api.telegram.org/bot8132090842:AAE3z3SNMV2z8V4ord_YE7zfo0uPLrL86lo/sendMessage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,6 +70,14 @@
           text: message
         })
       });
+
+      // отправка в archive + удаление из orders
+      firebase.database().ref("archive").push(order);
+      firebase.database().ref("orders/" + key).remove();
+
+      // удалить с экрана
+      const block = document.querySelector(`.order[data-key='${key}']`);
+      if (block) block.remove();
     }
   </script>
 </body>
