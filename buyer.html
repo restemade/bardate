@@ -1,0 +1,184 @@
+<!-- 🔁 Buyer.html с Firebase + Server fetch + звук + счётчик + splash -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Buyer</title>
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <script>navigator.serviceWorker?.register("service-worker.js")</script>
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #000; color: #fff; font-family: sans-serif;
+    }
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: url('apple-splash-1125x2436-dark.png') center center no-repeat;
+      background-size: cover;
+      z-index: 9999;
+    }
+    .auth-screen {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    input, button {
+      padding: 10px; font-size: 18px;
+      border-radius: 8px; border: none;
+      width: 80vw; max-width: 300px;
+    }
+    .main { padding: 10px; }
+    .products { max-height: 45vh; overflow-y: auto; }
+    .product { background: #111; margin-bottom: 6px; padding: 10px; border-radius: 8px; }
+    .cart { max-height: 30vh; overflow-y: auto; background: #111; padding: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div id="splash"></div>
+  <audio id="ping" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+  <div class="auth-screen" id="authScreen" style="display:none">
+    <input type="text" id="loginName" placeholder="Имя" />
+    <input type="password" id="loginPass" placeholder="Пароль" />
+    <button onclick="login()">Войти</button>
+  </div>
+
+  <div class="main" id="mainScreen" style="display:none;">
+    <h2>Привет, <span id="username"></span>!</h2>
+    <input id="search" placeholder="🔍 Поиск по товарам..." oninput="filterProducts()" />
+    <div class="products" id="productList"></div>
+    <div class="cart" id="cart">
+      <h3>🛒 Корзина</h3>
+      <ul id="cartItems"></ul>
+      <p>Итого: <span id="totalPrice">0</span> ₸</p>
+      <button onclick="sendOrder()">📨 Отправить</button>
+    </div>
+  </div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+let user = null;
+let cart = [];
+let allProducts = [];
+let autoClearTimer = null;
+
+window.onload = () => {
+  setTimeout(() => {
+    document.getElementById("splash").style.display = "none";
+    document.getElementById("authScreen").style.display = "flex";
+  }, 3000);
+};
+
+function login() {
+  const name = document.getElementById("loginName").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+  fetch("users.json").then(r => r.json()).then(data => {
+    const found = data.find(u => u.name === name && u.password === pass);
+    if (found) {
+      user = found.name;
+      document.getElementById("authScreen").style.display = "none";
+      document.getElementById("mainScreen").style.display = "block";
+      document.getElementById("username").innerText = user;
+      resetTimer();
+    } else alert("Неверные данные");
+  });
+}
+
+async function loadProducts() {
+  const res = await fetch("товары.json");
+  allProducts = await res.json();
+  renderProducts(allProducts);
+}
+
+function renderProducts(list) {
+  const container = document.getElementById("productList");
+  container.innerHTML = "";
+  list.forEach(p => {
+    const el = document.createElement("div");
+    el.className = "product";
+    el.innerHTML = `<b>${p.name}</b><br>${p.price} ₸<br>
+      <button onclick='changeQty(${JSON.stringify(p)}, -1)'>➖</button>
+      <button onclick='changeQty(${JSON.stringify(p)}, 1)'>➕</button>`;
+    container.appendChild(el);
+  });
+}
+
+function filterProducts() {
+  const term = document.getElementById("search").value.toLowerCase();
+  renderProducts(allProducts.filter(p => p.name.toLowerCase().includes(term)));
+}
+
+function changeQty(product, delta) {
+  const found = cart.find(item => item.name === product.name);
+  if (found) {
+    found.count += delta;
+    if (found.count <= 0) cart = cart.filter(i => i.name !== product.name);
+  } else if (delta > 0) {
+    product.count = 1;
+    cart.push(product);
+  }
+  renderCart();
+  resetTimer();
+}
+
+function renderCart() {
+  const ul = document.getElementById("cartItems");
+  const total = cart.reduce((s, p) => s + p.price * p.count, 0);
+  ul.innerHTML = "";
+  cart.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `${p.name} × ${p.count} = ${p.price * p.count} ₸`;
+    ul.appendChild(li);
+  });
+  document.getElementById("totalPrice").innerText = total;
+}
+
+function sendOrder() {
+  if (!user || cart.length === 0) return alert("Корзина пуста или не вошли.");
+  const order = {
+    user,
+    cart,
+    total: cart.reduce((s, p) => s + p.price * p.count, 0),
+    timestamp: Date.now()
+  };
+
+  // Firebase
+  db.ref("orders").push(order);
+
+  // Server
+  fetch("http://localhost:5000/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(order)
+  }).then(res => res.json()).then(() => {
+    document.getElementById("ping").play();
+    alert("Отправлено!");
+    cart = [];
+    renderCart();
+    resetTimer();
+  }).catch(() => alert("Ошибка сервера: не удалось отправить"));
+}
+
+function resetTimer() {
+  if (autoClearTimer) clearTimeout(autoClearTimer);
+  autoClearTimer = setTimeout(() => {
+    cart = [];
+    renderCart();
+    alert("Корзина очищена по таймеру 🕒");
+  }, 300000);
+}
+loadProducts();
+</script>
+</body>
+</html>

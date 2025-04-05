@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бар | Кассир</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h2>📥 Входящие заказы</h2>
+  <div id="orders"></div>
+
+  <script>
+    const ordersDiv = document.getElementById("orders");
+
+    db.ref("orders").on("child_added", (snap) => {
+      const data = snap.val();
+      const key = snap.key;
+
+      const card = document.createElement("div");
+      card.className = "product";
+      card.innerHTML = `
+        <h3>👤 ${data.user}</h3>
+        <ul>${data.cart.map(item => `<li>${item.name} - ${item.price} ₸</li>`).join('')}</ul>
+        <b>Итого: ${data.total} ₸</b><br>
+        <button onclick="completeOrder('${key}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">✅ Завершить</button>
+      `;
+      ordersDiv.prepend(card);
+    });
+
+    function completeOrder(key, orderData) {
+      // Отправка в архив — имитация сохранения локально в date.json (файл создается вручную с сервера)
+      const completed = JSON.parse(localStorage.getItem("completedOrders") || "[]");
+      completed.push(orderData);
+      localStorage.setItem("completedOrders", JSON.stringify(completed));
+
+      // Удаление из активных
+      db.ref("orders/" + key).remove();
+
+      alert("Заказ завершен и сохранен в архив!");
+      location.reload();
+    }
+  </script>
+</body>
+</html>
