@@ -67,22 +67,8 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="firebase-config.js"></script>
-<script>
-let selectedCategory = 'все';
+<script>let selectedCategory = 'все';
 let categoryMap = {};
-
-async function loadProducts() {
-  const catRes = await fetch("categories.json");
-  categoryMap = await catRes.json();
-  const res = await fetch("товары.json");
-  allProducts = await res.json();
-  renderProducts(allProducts.filter(p => selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name)));
-}
-
-function setCategory(cat) {
-  selectedCategory = cat;
-  filterProducts();
-}
 
 let user = null;
 let cart = [];
@@ -133,6 +119,8 @@ function login() {
 }
 
 async function loadProducts() {
+  const catRes = await fetch('categories.json');
+  categoryMap = await catRes.json();
   const res = await fetch("товары.json");
   allProducts = await res.json();
   renderProducts(allProducts);
@@ -155,7 +143,7 @@ function renderProducts(list) {
 
 function filterProducts() {
   const term = document.getElementById("search").value.toLowerCase();
-  renderProducts(allProducts.filter(p => p.name.toLowerCase().includes(term)));
+  renderProducts(allProducts.filter(p => selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name)).filter(p => p.name.toLowerCase().includes(term)));
 }
 
 function changeQty(product, delta) {
@@ -219,6 +207,11 @@ function sendOrder() {
 }
 
 loadProducts();
+
+function setCategory(cat) {
+  selectedCategory = cat;
+  filterProducts();
+}
 </script>
 </body>
 </html>
