@@ -49,6 +49,7 @@
   <div class="auth-screen" id="authScreen" style="display:none">
     <input type="text" id="loginName" name="username" autocomplete="username" placeholder="Имя" />
     <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="Пароль" />
+    <label style="color:white;font-size:14px"><input type="checkbox" id="rememberMe" /> Запомнить меня</label>
     <button onclick="login()">Войти</button>
   </div>
 
@@ -104,7 +105,10 @@ function login() {
     const found = data.find(u => u.name === name && u.password === pass);
     if (found) {
       user = found.name;
-      localStorage.setItem("buyer_name", name);
+      if (document.getElementById("rememberMe").checked) {
+        localStorage.setItem("buyer_name", name);
+        localStorage.setItem("buyer_pass", pass);
+      }
       localStorage.setItem("buyer_pass", pass);
       document.getElementById("authScreen").style.display = "none";
       document.getElementById("mainScreen").style.display = "flex";
