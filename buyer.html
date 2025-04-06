@@ -12,7 +12,10 @@
 <link href="manifest.json" rel="manifest"/>
 <link href="assets/icon-192.png" rel="apple-touch-icon"/>
 <link href="assets/icon-512.png" rel="icon"/>
-<script>navigator.serviceWorker?.register("service-worker.js")</script>
+<script>
+const allProducts = [{"name": "Arzu 1l", "price": 500}, {"name": "BUZZ", "price": 650}, {"name": "COLA 1L", "price": 900}, {"name": "Coca-cola 0.5", "price": 550}, {"name": "FANTA", "price": 550}, {"name": "FANTA 1L", "price": 900}, {"name": "FUSE TEA 1L", "price": 900}, {"name": "Fuse tea 0.5", "price": 550}, {"name": "GS лимонад + тархун", "price": 650}, {"name": "KINDER/M&M/KITKAT", "price": 700}, {"name": "Piko 0.5", "price": 650}, {"name": "Qazaq-Food Казы", "price": 0}, {"name": "Qazaq-Food Колбаса", "price": 0}, {"name": "SPRITE 1L", "price": 900}, {"name": "Vitamin C", "price": 400}, {"name": "arzu 0.5", "price": 300}, {"name": "Bonaqua 1l", "price": 500}, {"name": "Cola Zero 0.450", "price": 550}, {"name": "Dizzy", "price": 550}, {"name": "Gorilla", "price": 750}, {"name": "pepsi", "price": 550}, {"name": "Redbull", "price": 1000}, {"name": "sprite 05", "price": 550}, {"name": "Albeni", "price": 500}, {"name": "Бургер Камди Black, Хот-Дог", "price": 1500}, {"name": "Бургер Шокупан, Сэндвич", "price": 1300}, {"name": "Бургер БАО, Puff", "price": 1400}, {"name": "Гранат ПЛАСТ", "price": 400}, {"name": "ЕДА Only Staff", "price": 900}, {"name": "ЕЕ БАНАН", "price": 650}, {"name": "Клаб-Сэндвич", "price": 1400}, {"name": "Мохито", "price": 550}, {"name": "Панини", "price": 1500}, {"name": "Пицца TOYASYN", "price": 1200}, {"name": "Сникерс/Твикс", "price": 600}, {"name": "Френч-дог ризык", "price": 1000}, {"name": "Сэндвич/Панини TIMAKHOVSKI", "price": 650}];
+const categoryMap = {"напитки": ["Arzu 1l", "BUZZ", "COLA 1L", "Coca-cola 0.5", "FANTA", "FANTA 1L", "FUSE TEA 1L", "Fuse tea 0.5", "GS лимонад + тархун", "Piko 0.5", "SPRITE 1L", "Vitamin C", "arzu 0.5", "Bonaqua 1l", "Cola Zero 0.450", "Dizzy", "Gorilla", "pepsi", "Redbull", "sprite 05", "Гранат ПЛАСТ", "ЕЕ БАНАН", "Мохито"], "еда": ["Qazaq-Food Казы", "Qazaq-Food Колбаса", "Бургер Камди Black, Хот-Дог", "Бургер Шокупан, Сэндвич", "Бургер БАО, Puff", "ЕДА Only Staff", "Клаб-Сэндвич", "Панини", "Пицца TOYASYN", "Френч-дог ризык", "Сэндвич/Панини TIMAKHOVSKI"], "шоколадки": ["KINDER/M&M/KITKAT", "Albeni", "Сникерс/Твикс"]};
+</script><script>navigator.serviceWorker?.register("service-worker.js")</script>
 <style>
     html, body {
       margin: 0; padding: 0; height: 100%;
@@ -56,7 +59,7 @@
 <div class="main" id="mainScreen" style="display:none;">
 <h2>Привет, <span id="username"></span>!</h2>
 <input id="search" oninput="filterProducts()" placeholder="🔍 Поиск по товарам..."/>
-<div id="categoryTabs" style="display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;"><button onclick="setCategory('все')">Все</button><button onclick="setCategory('напитки')">Напитки</button><button onclick="setCategory('еда')">Еда</button><button onclick="setCategory('шоколадки')">Шоколадки</button></div><div id="categoryTabs" style="display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;"><button onclick="setCategory('все')">Все</button><button onclick="setCategory('напитки')">Напитки</button><button onclick="setCategory('еда')">Еда</button><button onclick="setCategory('шоколадки')">Шоколадки</button></div><div class="products" id="productList"></div>
+<div id="categoryTabs" style="display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;"><button onclick="setCategory('все')">Все</button><button onclick="setCategory('напитки')">Напитки</button><button onclick="setCategory('еда')">Еда</button><button onclick="setCategory('шоколадки')">Шоколадки</button></div><div class="products" id="productList"></div>
 <div class="cart" id="cart">
 <h3>🛒 Корзина</h3>
 <ul id="cartItems"></ul>
@@ -87,32 +90,5 @@ function renderProducts(list) {
     container.appendChild(el);
   });
 }
-</script><script>
-let selectedCategory = 'все';
-let categoryMap = {};
-let allProducts = [];
-
-async function loadProducts() {
-  const catRes = await fetch('categories.json');
-  categoryMap = await catRes.json();
-  const prodRes = await fetch('товары.json');
-  allProducts = await prodRes.json();
-  filterProducts();
-}
-
-function filterProducts() {
-  const term = document.getElementById("search")?.value.toLowerCase() || "";
-  const filtered = allProducts
-    .filter(p => selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name))
-    .filter(p => p.name.toLowerCase().includes(term));
-  renderProducts(filtered);
-}
-
-function setCategory(cat) {
-  selectedCategory = cat;
-  filterProducts();
-}
-
-loadProducts();
 </script></body>
 </html>
