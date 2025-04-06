@@ -242,3 +242,27 @@ loadProducts = async function () {
 </script>
 </body>
 </html>
+<script>
+const imageMap = {"Arzu 1l": "assets/images/Arzu 1l.jpg", "COLA 1L": "assets/images/COLA 1L.jpg", "Coca-cola 0.5": "assets/images/Coca-cola 0.5.jpg", "FANTA": "assets/images/FANTA.png", "FANTA 1L": "assets/images/FANTA 1L.png", "FUSE TEA 1L": "assets/images/FUSE TEA 1L.png", "Fuse tea 0.5": "assets/images/Fuse tea 0.5.png", "Piko 0.5": "assets/images/Piko 0.5.png", "SPRITE 1L": "assets/images/SPRITE 1L.jpg", "Vitamin C": "assets/images/Vitamin C.jpg", "arzu 0.5": "assets/images/arzu 0.5.jpg", "Bonaqua 1l": "assets/images/Bonaqua 1l.png", "Cola Zero 0.450": "assets/images/Cola Zero 0.450.png", "Dizzy": "assets/images/Dizzy.png", "Gorilla": "assets/images/Gorilla.png", "pepsi": "assets/images/pepsi.png", "Redbull": "assets/images/Redbull.png", "sprite 05": "assets/images/sprite 05.jpg", "Albeni": "assets/images/Albeni.png"};
+
+
+function renderProducts(list) {
+  const container = document.getElementById("productList");
+  container.innerHTML = "";
+  list.forEach(p => {
+    const el = document.createElement("div");
+    el.className = "product";
+    const imgPath = imageMap[p.name] || "";
+    el.innerHTML = `
+      <button onclick='changeQty(${JSON.stringify(p)}, -1)' style='margin-right:10px;'>➖</button>
+      <div>
+        <img src="${imgPath}" alt="${p.name}" style="width:80px;height:80px;object-fit:contain;background:white;border-radius:10px;"><br>
+        <b>${p.name}</b><br>${p.price} ₸
+      </div>
+      <button onclick='changeQty(${JSON.stringify(p)}, 1)' style='margin-left:10px;'>➕</button>
+    `;
+    container.appendChild(el);
+  });
+}
+
+</script>
