@@ -1,126 +1,180 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Бар</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Buyer</title>
+  <meta name="theme-color" content="#000000" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="icon" href="assets/icon-512.png" />
+  <script>navigator.serviceWorker?.register("service-worker.js")</script>
   <style>
-    body { background: black; color: white; font-family: sans-serif; padding: 10px; }
-    input, button { padding: 10px; margin: 5px 0; width: 100%; }
-    .hidden { display: none; }
-    .tabs button { margin: 5px; padding: 5px 10px; }
-    .product { background: #222; margin: 5px; padding: 10px; border-radius: 8px; }
-    .cart { margin-top: 20px; background: #111; padding: 10px; border-radius: 10px; }
-    .qty-btns button { width: 30px; height: 30px; margin: 0 5px; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #000; color: #fff; font-family: sans-serif;
+      touch-action: manipulation;
+    }
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: url('assets/apple-splash-1125x2436-dark.png') center center no-repeat;
+      background-size: cover;
+      z-index: 9999;
+    }
+    .auth-screen {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    input, button {
+      padding: 10px; font-size: 18px;
+      border-radius: 8px; border: none;
+      width: 80vw; max-width: 300px;
+    }
+    .main { padding: 10px; }
+    .products { max-height: 45vh; overflow-y: auto; }
+    .product { background: #111; margin-bottom: 6px; padding: 10px; border-radius: 8px; }
+    .cart { max-height: 30vh; overflow-y: auto; background: #111; padding: 10px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <div id="auth">
-    <h2>Авторизация</h2>
-    <input id="login" placeholder="Имя">
-    <input id="pass" type="password" placeholder="Пароль">
-    <button onclick="auth()">Войти</button>
+  <div id="splash"></div>
+  <audio id="ping" src="assets/ping.mp3" preload="auto"></audio>
+
+  <div class="auth-screen" id="authScreen" style="display:none">
+    <input type="text" id="loginName" placeholder="Имя" />
+    <input type="password" id="loginPass" placeholder="Пароль" />
+    <button onclick="login()">Войти</button>
   </div>
 
-  <div id="app" class="hidden">
-    <h2>Выбор товаров</h2>
-    <div class="tabs">
-      <button onclick="setCategory('все')">Все</button>
-      <button onclick="setCategory('напитки')">Напитки</button>
-      <button onclick="setCategory('еда')">Еда</button>
-      <button onclick="setCategory('шоколадки')">Шоколадки</button>
+  <div class="main" id="mainScreen" style="display:none;">
+    <h2>Привет, <span id="username"></span>!</h2>
+    <input id="search" placeholder="🔍 Поиск по товарам..." oninput="filterProducts()" />
+    <div class="products" id="productList"></div>
+    <div class="cart" id="cart">
+      <h3>🛒 Корзина</h3>
+      <ul id="cartItems"></ul>
+      <p>Итого: <span id="totalPrice">0</span> ₸</p>
+      <button onclick="sendOrder()">📨 Отправить</button>
     </div>
-    <div id="productList"></div>
-    <div class="cart" id="cartList"></div>
-    <button onclick="sendOrder()">📤 Отправить</button>
   </div>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="firebase-config.js"></script>
 <script>
-const users = {"Zhanik": "1234", "Dias": "1234", "Sanzhar": "1234", "Bekzat": "1234", "Elaman": "1234", "Kaisar": "1234", "Sultan": "1234"};
-const products = [{"name": "Arzu 1l", "price": 500}, {"name": "BUZZ", "price": 650}, {"name": "COLA 1L", "price": 900}, {"name": "Coca-cola 0.5", "price": 550}, {"name": "FANTA", "price": 550}, {"name": "FANTA 1L", "price": 900}, {"name": "FUSE TEA 1L", "price": 900}, {"name": "Fuse tea 0.5", "price": 550}, {"name": "GS лимонад + тархун", "price": 650}, {"name": "KINDER/M&M/KITKAT", "price": 700}, {"name": "Piko 0.5", "price": 650}, {"name": "Qazaq-Food Казы", "price": 0}, {"name": "Qazaq-Food Колбаса", "price": 0}, {"name": "SPRITE 1L", "price": 900}, {"name": "Vitamin C", "price": 400}, {"name": "arzu 0.5", "price": 300}, {"name": "Bonaqua 1l", "price": 500}, {"name": "Cola Zero 0.450", "price": 550}, {"name": "Dizzy", "price": 550}, {"name": "Gorilla", "price": 750}, {"name": "pepsi", "price": 550}, {"name": "Redbull", "price": 1000}, {"name": "sprite 05", "price": 550}, {"name": "Albeni", "price": 500}, {"name": "Бургер Камди Black, Хот-Дог", "price": 1500}, {"name": "Бургер Шокупан, Сэндвич", "price": 1300}, {"name": "Бургер БАО, Puff", "price": 1400}, {"name": "Гранат ПЛАСТ", "price": 400}, {"name": "ЕДА Only Staff", "price": 900}, {"name": "ЕЕ БАНАН", "price": 650}, {"name": "Клаб-Сэндвич", "price": 1400}, {"name": "Мохито", "price": 550}, {"name": "Панини", "price": 1500}, {"name": "Пицца TOYASYN", "price": 1200}, {"name": "Сникерс/Твикс", "price": 600}, {"name": "Френч-дог ризык", "price": 1000}, {"name": "Сэндвич/Панини TIMAKHOVSKI", "price": 650}];
-const categories = {"напитки": ["Arzu 1l", "BUZZ", "COLA 1L", "Coca-cola 0.5", "FANTA", "FANTA 1L", "FUSE TEA 1L", "Fuse tea 0.5", "GS лимонад + тархун", "Piko 0.5", "SPRITE 1L", "Vitamin C", "arzu 0.5", "Bonaqua 1l", "Cola Zero 0.450", "Dizzy", "Gorilla", "pepsi", "Redbull", "sprite 05", "Гранат ПЛАСТ", "ЕЕ БАНАН", "Мохито"], "еда": ["Qazaq-Food Казы", "Qazaq-Food Колбаса", "Бургер Камди Black, Хот-Дог", "Бургер Шокупан, Сэндвич", "Бургер БАО, Puff", "ЕДА Only Staff", "Клаб-Сэндвич", "Панини", "Пицца TOYASYN", "Френч-дог ризык", "Сэндвич/Панини TIMAKHOVSKI"], "шоколадки": ["KINDER/M&M/KITKAT", "Albeni", "Сникерс/Твикс"]};
-
 let user = null;
-let selectedCategory = 'все';
-let cart = {};
+let cart = [];
+let allProducts = [];
+let autoClearTimer = null;
 
-function auth() {
-  const name = document.getElementById("login").value;
-  const pass = document.getElementById("pass").value;
-  if (users[name] === pass) {
-    user = name;
-    document.getElementById("auth").classList.add("hidden");
-    document.getElementById("app").classList.remove("hidden");
-    renderProducts();
-  } else {
-    alert("Неверный логин или пароль");
-  }
+window.onload = () => {
+  setTimeout(() => {
+    document.getElementById("splash").style.display = "none";
+    document.getElementById("authScreen").style.display = "flex";
+  }, 3000);
+};
+
+function login() {
+  const name = document.getElementById("loginName").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+  fetch("users.json").then(r => r.json()).then(data => {
+    const found = data.find(u => u.name === name && u.password === pass);
+    if (found) {
+      user = found.name;
+      document.getElementById("authScreen").style.display = "none";
+      document.getElementById("mainScreen").style.display = "block";
+      document.getElementById("username").innerText = user;
+      resetTimer();
+    } else alert("Неверные данные");
+  });
 }
 
-function setCategory(cat) {
-  selectedCategory = cat;
-  renderProducts();
+async function loadProducts() {
+  const res = await fetch("товары.json");
+  allProducts = await res.json();
+  renderProducts(allProducts);
 }
 
-function renderProducts() {
-  const list = document.getElementById("productList");
-  list.innerHTML = "";
-  const filter = products.filter(p => selectedCategory === 'все' || (categories[selectedCategory] || []).includes(p.name));
-  filter.forEach(p => {
+function renderProducts(list) {
+  const container = document.getElementById("productList");
+  container.innerHTML = "";
+  list.forEach(p => {
     const el = document.createElement("div");
     el.className = "product";
-    el.innerHTML = `
-      <div><b>${p.name}</b> — ${p.price} ₸</div>
-      <div class='qty-btns'>
-        <button onclick="updateQty('Сэндвич/Панини TIMAKHOVSKI', -1)">➖</button>
-        <span id="qty-Сэндвич/Панини TIMAKHOVSKI">${cart[p.name]?.qty || 0}</span>
-        <button onclick="updateQty('Сэндвич/Панини TIMAKHOVSKI', 1)">➕</button>
-      </div>
-    `;
-    list.appendChild(el);
+    el.innerHTML = `<b>${p.name}</b><br>${p.price} ₸<br>
+      <button onclick='changeQty(${JSON.stringify(p)}, -1)'>➖</button>
+      <button onclick='changeQty(${JSON.stringify(p)}, 1)'>➕</button>`;
+    container.appendChild(el);
   });
-  updateCart();
 }
 
-function updateQty(name, delta) {
-  if (!cart[name]) cart[name] = { qty: 0, price: products.find(p => p.name === name).price };
-  cart[name].qty += delta;
-  if (cart[name].qty <= 0) delete cart[name];
-  document.getElementById("qty-" + name).textContent = cart[name]?.qty || 0;
-  updateCart();
+function filterProducts() {
+  const term = document.getElementById("search").value.toLowerCase();
+  renderProducts(allProducts.filter(p => p.name.toLowerCase().includes(term)));
 }
 
-function updateCart() {
-  const out = document.getElementById("cartList");
-  out.innerHTML = "<h3>🛒 Корзина</h3>";
-  let total = 0;
-  for (let k in cart) {
-    const i = cart[k];
-    out.innerHTML += `<div>${k} x${i.qty} — ${i.qty * i.price} ₸</div>`;
-    total += i.qty * i.price;
+function changeQty(product, delta) {
+  const found = cart.find(item => item.name === product.name);
+  if (found) {
+    found.count += delta;
+    if (found.count <= 0) cart = cart.filter(i => i.name !== product.name);
+  } else if (delta > 0) {
+    product.count = 1;
+    cart.push(product);
   }
-  out.innerHTML += `<div><b>Итого: ${total} ₸</b></div>`;
+  renderCart();
+  resetTimer();
+}
+
+function renderCart() {
+  const ul = document.getElementById("cartItems");
+  const total = cart.reduce((s, p) => s + p.price * p.count, 0);
+  ul.innerHTML = "";
+  cart.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `${p.name} × ${p.count} = ${p.price * p.count} ₸`;
+    ul.appendChild(li);
+  });
+  document.getElementById("totalPrice").innerText = total;
 }
 
 function sendOrder() {
-  if (!user || Object.keys(cart).length === 0) return alert("Корзина пуста");
-  const payload = {
+  if (!user || cart.length === 0) return alert("Корзина пуста или не вошли.");
+  const order = {
     user,
-    items: cart,
-    date: new Date().toLocaleString('ru-RU'),
-    id: Date.now()
+    cart,
+    total: cart.reduce((s, p) => s + p.price * p.count, 0),
+    timestamp: Date.now()
   };
-  fetch("https://bardate-6da25-default-rtdb.europe-west1.firebasedatabase.app/requests.json", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then(() => {
-    cart = {};
-    updateCart();
-    alert("✅ Заказ отправлен");
-  }).catch(() => {
-    alert("Ошибка сервера");
-  });
+
+  // Firebase only, cashier will send to Telegram later
+  db.ref("orders").push(order).then(() => {
+    document.getElementById("ping").play();
+    alert("Заказ отправлен кассиру!");
+    cart = [];
+    renderCart();
+    resetTimer();
+  }).catch(() => alert("Ошибка сервера: не удалось отправить"));
 }
+
+function resetTimer() {
+  if (autoClearTimer) clearTimeout(autoClearTimer);
+  autoClearTimer = setTimeout(() => {
+    cart = [];
+    renderCart();
+    alert("Корзина очищена по таймеру 🕒");
+  }, 300000);
+}
+loadProducts();
 </script>
 </body>
 </html>
