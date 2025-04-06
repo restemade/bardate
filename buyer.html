@@ -76,6 +76,18 @@ window.onload = () => {
   document.getElementById("authScreen").style.display = "flex";
 
   // Попытка авто-входа
+  setTimeout(() => {
+    const savedName = localStorage.getItem("buyer_name");
+    const savedPass = localStorage.getItem("buyer_pass");
+    if (savedName && savedPass) {
+      console.log("✅ Автологин сработал");
+      document.getElementById("loginName").value = savedName;
+      document.getElementById("loginPass").value = savedPass;
+      login();
+    } else {
+      console.log("❌ Автологин не найден");
+    }
+  }, 1500);
   const savedName = localStorage.getItem("buyer_name");
   const savedPass = localStorage.getItem("buyer_pass");
   if (savedName && savedPass) {
