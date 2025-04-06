@@ -1,0 +1,45 @@
+{
+  "напитки": [
+    "Arzu 1l",
+    "BUZZ",
+    "COLA 1L",
+    "Coca-cola 0.5",
+    "FANTA",
+    "FANTA 1L",
+    "FUSE TEA 1L",
+    "Fuse tea 0.5",
+    "GS лимонад + тархун",
+    "Piko 0.5",
+    "SPRITE 1L",
+    "Vitamin C",
+    "arzu 0.5",
+    "Bonaqua 1l",
+    "Cola Zero 0.450",
+    "Dizzy",
+    "Gorilla",
+    "pepsi",
+    "Redbull",
+    "sprite 05",
+    "Гранат ПЛАСТ",
+    "ЕЕ БАНАН",
+    "Мохито"
+  ],
+  "еда": [
+    "Qazaq-Food Казы",
+    "Qazaq-Food Колбаса",
+    "Бургер Камди Black, Хот-Дог",
+    "Бургер Шокупан, Сэндвич",
+    "Бургер БАО, Puff",
+    "ЕДА Only Staff",
+    "Клаб-Сэндвич",
+    "Панини",
+    "Пицца TOYASYN",
+    "Френч-дог ризык",
+    "Сэндвич/Панини TIMAKHOVSKI"
+  ],
+  "шоколадки": [
+    "KINDER/M&M/KITKAT",
+    "Albeni",
+    "Сникерс/Твикс"
+  ]
+}
