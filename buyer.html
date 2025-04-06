@@ -1,18 +1,19 @@
 <!DOCTYPE html>
+
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Buyer</title>
-  <meta name="theme-color" content="#000000" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="icon" href="assets/icon-512.png" />
-  <script>navigator.serviceWorker?.register("service-worker.js")</script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Buyer</title>
+<meta content="#000000" name="theme-color"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<link href="manifest.json" rel="manifest"/>
+<link href="assets/icon-192.png" rel="apple-touch-icon"/>
+<link href="assets/icon-512.png" rel="icon"/>
+<script>navigator.serviceWorker?.register("service-worker.js")</script>
+<style>
     html, body {
       margin: 0; padding: 0; height: 100%;
       background: #000; color: #fff; font-family: sans-serif;
@@ -45,30 +46,44 @@
   </style>
 </head>
 <body>
-  <audio id="ping" src="assets/ping.mp3" preload="auto"></audio>
-  <div class="auth-screen" id="authScreen" style="display:none">
-    <input type="text" id="loginName" name="username" autocomplete="username" placeholder="Имя" />
-    <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="Пароль" />
-    <label style="color:white;font-size:14px"><input type="checkbox" id="rememberMe" /> Запомнить меня</label>
-    <button onclick="login()">Войти</button>
-  </div>
-
-  <div class="main" id="mainScreen" style="display:none;">
-    <h2>Привет, <span id="username"></span>!</h2>
-    <input id="search" placeholder="🔍 Поиск по товарам..." oninput="filterProducts()" />
-    <div class="products" id="productList"></div>
-    <div class="cart" id="cart">
-      <h3>🛒 Корзина</h3>
-      <ul id="cartItems"></ul>
-      <p>Итого: <span id="totalPrice">0</span> ₸</p>
-      <button onclick="sendOrder()">📨 Отправить</button>
-    </div>
-  </div>
-
+<audio id="ping" preload="auto" src="assets/ping.mp3"></audio>
+<div class="auth-screen" id="authScreen" style="display:none">
+<input autocomplete="username" id="loginName" name="username" placeholder="Имя" type="text"/>
+<input autocomplete="current-password" id="loginPass" name="password" placeholder="Пароль" type="password"/>
+<label style="color:white;font-size:14px"><input id="rememberMe" type="checkbox"/> Запомнить меня</label>
+<button onclick="login()">Войти</button>
+</div>
+<div class="main" id="mainScreen" style="display:none;">
+<h2>Привет, <span id="username"></span>!</h2>
+<input id="search" oninput="filterProducts()" placeholder="🔍 Поиск по товарам..."/>
+<div id="categoryTabs" style="display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;"><button onclick="setCategory('все')">Все</button><button onclick="setCategory('напитки')">Напитки</button><button onclick="setCategory('еда')">Еда</button><button onclick="setCategory('шоколадки')">Шоколадки</button></div><div class="products" id="productList"></div>
+<div class="cart" id="cart">
+<h3>🛒 Корзина</h3>
+<ul id="cartItems"></ul>
+<p>Итого: <span id="totalPrice">0</span> ₸</p>
+<button onclick="sendOrder()">📨 Отправить</button>
+</div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="firebase-config.js"></script>
 <script>
+let selectedCategory = 'все';
+let categoryMap = {};
+
+async function loadProducts() {
+  const catRes = await fetch("categories.json");
+  categoryMap = await catRes.json();
+  const res = await fetch("товары.json");
+  allProducts = await res.json();
+  renderProducts(allProducts.filter(p => selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name)));
+}
+
+function setCategory(cat) {
+  selectedCategory = cat;
+  filterProducts();
+}
+
 let user = null;
 let cart = [];
 let allProducts = [];
