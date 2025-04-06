@@ -56,7 +56,7 @@
 <div class="main" id="mainScreen" style="display:none;">
 <h2>Привет, <span id="username"></span>!</h2>
 <input id="search" oninput="filterProducts()" placeholder="🔍 Поиск по товарам..."/>
-<div id="categoryTabs" style="display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;"><button onclick="setCategory('все')">Все</button><button onclick="setCategory('напитки')">Напитки</button><button onclick="setCategory('еда')">Еда</button><button onclick="setCategory('шоколадки')">Шоколадки</button></div><div class="products" id="productList"></div>
+<div id="categoryTabs" style="display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;"><button onclick="setCategory('все')">Все</button><button onclick="setCategory('напитки')">Напитки</button><button onclick="setCategory('еда')">Еда</button><button onclick="setCategory('шоколадки')">Шоколадки</button></div><div id="categoryTabs" style="display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap;"><button onclick="setCategory('все')">Все</button><button onclick="setCategory('напитки')">Напитки</button><button onclick="setCategory('еда')">Еда</button><button onclick="setCategory('шоколадки')">Шоколадки</button></div><div class="products" id="productList"></div>
 <div class="cart" id="cart">
 <h3>🛒 Корзина</h3>
 <ul id="cartItems"></ul>
@@ -67,7 +67,6 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="firebase-config.js"></script>
-
 <script>
 const imageMap = {"Arzu 1l": "assets/images/Arzu 1l.jpg", "COLA 1L": "assets/images/COLA 1L.jpg", "Coca-cola 0.5": "assets/images/Coca-cola 0.5.jpg", "FANTA": "assets/images/FANTA.png", "FANTA 1L": "assets/images/FANTA 1L.png", "FUSE TEA 1L": "assets/images/FUSE TEA 1L.png", "Fuse tea 0.5": "assets/images/Fuse tea 0.5.png", "Piko 0.5": "assets/images/Piko 0.5.png", "SPRITE 1L": "assets/images/SPRITE 1L.jpg", "Vitamin C": "assets/images/Vitamin C.jpg", "arzu 0.5": "assets/images/arzu 0.5.jpg", "Bonaqua 1l": "assets/images/Bonaqua 1l.png", "Cola Zero 0.450": "assets/images/Cola Zero 0.450.png", "Dizzy": "assets/images/Dizzy.png", "Gorilla": "assets/images/Gorilla.png", "pepsi": "assets/images/pepsi.png", "Redbull": "assets/images/Redbull.png", "sprite 05": "assets/images/sprite 05.jpg", "Albeni": "assets/images/Albeni.png"};
 function renderProducts(list) {
@@ -88,5 +87,32 @@ function renderProducts(list) {
     container.appendChild(el);
   });
 }
+</script><script>
+let selectedCategory = 'все';
+let categoryMap = {};
+let allProducts = [];
+
+async function loadProducts() {
+  const catRes = await fetch('categories.json');
+  categoryMap = await catRes.json();
+  const prodRes = await fetch('товары.json');
+  allProducts = await prodRes.json();
+  filterProducts();
+}
+
+function filterProducts() {
+  const term = document.getElementById("search")?.value.toLowerCase() || "";
+  const filtered = allProducts
+    .filter(p => selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name))
+    .filter(p => p.name.toLowerCase().includes(term));
+  renderProducts(filtered);
+}
+
+function setCategory(cat) {
+  selectedCategory = cat;
+  filterProducts();
+}
+
+loadProducts();
 </script></body>
 </html>
