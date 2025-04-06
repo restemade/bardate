@@ -8,47 +8,118 @@
   <meta name="mobile-web-app-capable" content="yes">
   <style>
     body { font-family: sans-serif; background: black; color: white; margin: 0; padding: 10px; }
-    h1 { text-align: center; }
+    input, button { padding: 8px; margin: 4px 0; width: 100%; }
+    .hidden { display: none; }
     .tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
     .tabs button { padding: 5px 10px; border: none; border-radius: 6px; background: white; color: black; cursor: pointer; }
     .products { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
     .product { background: #111; padding: 10px; border-radius: 10px; width: 120px; text-align: center; }
+    .cart { background: #222; padding: 10px; margin-top: 10px; border-radius: 10px; }
   </style>
 </head>
 <body>
-  <h1>🍹 Меню бара</h1>
-  <div class="tabs">
-    <button onclick="setCategory('все')">Все</button>
-    <button onclick="setCategory('напитки')">Напитки</button>
-    <button onclick="setCategory('еда')">Еда</button>
-    <button onclick="setCategory('шоколадки')">Шоколадки</button>
+  <div id="loginSection">
+    <h2>Авторизация</h2>
+    <input id="username" placeholder="Имя">
+    <input id="password" type="password" placeholder="Пароль">
+    <button onclick="login()">Войти</button>
   </div>
-  <div class="products" id="productList"></div>
-  <script>
-    const allProducts = [{"name": "Arzu 1l", "price": 500}, {"name": "BUZZ", "price": 650}, {"name": "COLA 1L", "price": 900}, {"name": "Coca-cola 0.5", "price": 550}, {"name": "FANTA", "price": 550}, {"name": "FANTA 1L", "price": 900}, {"name": "FUSE TEA 1L", "price": 900}, {"name": "Fuse tea 0.5", "price": 550}, {"name": "GS лимонад + тархун", "price": 650}, {"name": "KINDER/M&M/KITKAT", "price": 700}, {"name": "Piko 0.5", "price": 650}, {"name": "Qazaq-Food Казы", "price": 0}, {"name": "Qazaq-Food Колбаса", "price": 0}, {"name": "SPRITE 1L", "price": 900}, {"name": "Vitamin C", "price": 400}, {"name": "arzu 0.5", "price": 300}, {"name": "Bonaqua 1l", "price": 500}, {"name": "Cola Zero 0.450", "price": 550}, {"name": "Dizzy", "price": 550}, {"name": "Gorilla", "price": 750}, {"name": "pepsi", "price": 550}, {"name": "Redbull", "price": 1000}, {"name": "sprite 05", "price": 550}, {"name": "Albeni", "price": 500}, {"name": "Бургер Камди Black, Хот-Дог", "price": 1500}, {"name": "Бургер Шокупан, Сэндвич", "price": 1300}, {"name": "Бургер БАО, Puff", "price": 1400}, {"name": "Гранат ПЛАСТ", "price": 400}, {"name": "ЕДА Only Staff", "price": 900}, {"name": "ЕЕ БАНАН", "price": 650}, {"name": "Клаб-Сэндвич", "price": 1400}, {"name": "Мохито", "price": 550}, {"name": "Панини", "price": 1500}, {"name": "Пицца TOYASYN", "price": 1200}, {"name": "Сникерс/Твикс", "price": 600}, {"name": "Френч-дог ризык", "price": 1000}, {"name": "Сэндвич/Панини TIMAKHOVSKI", "price": 650}];
-    const categoryMap = {"напитки": ["Arzu 1l", "BUZZ", "COLA 1L", "Coca-cola 0.5", "FANTA", "FANTA 1L", "FUSE TEA 1L", "Fuse tea 0.5", "GS лимонад + тархун", "Piko 0.5", "SPRITE 1L", "Vitamin C", "arzu 0.5", "Bonaqua 1l", "Cola Zero 0.450", "Dizzy", "Gorilla", "pepsi", "Redbull", "sprite 05", "Гранат ПЛАСТ", "ЕЕ БАНАН", "Мохито"], "еда": ["Qazaq-Food Казы", "Qazaq-Food Колбаса", "Бургер Камди Black, Хот-Дог", "Бургер Шокупан, Сэндвич", "Бургер БАО, Puff", "ЕДА Only Staff", "Клаб-Сэндвич", "Панини", "Пицца TOYASYN", "Френч-дог ризык", "Сэндвич/Панини TIMAKHOVSKI"], "шоколадки": ["KINDER/M&M/KITKAT", "Albeni", "Сникерс/Твикс"]};
-    let selectedCategory = 'все';
 
-    function setCategory(cat) {
-      selectedCategory = cat;
-      const filtered = allProducts.filter(p =>
-        selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name)
-      );
-      renderProducts(filtered);
-    }
+  <div id="mainSection" class="hidden">
+    <h1>🍹 Меню</h1>
+    <div class="tabs">
+      <button onclick="setCategory('все')">Все</button>
+      <button onclick="setCategory('напитки')">Напитки</button>
+      <button onclick="setCategory('еда')">Еда</button>
+      <button onclick="setCategory('шоколадки')">Шоколадки</button>
+    </div>
+    <div class="products" id="productList"></div>
+    <div class="cart" id="cartList"></div>
+    <button onclick="submitOrder()">📤 Отправить заказ</button>
+  </div>
 
-    function renderProducts(list) {
-      const container = document.getElementById("productList");
-      container.innerHTML = "";
-      list.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "product";
-        div.innerHTML = `<div><b>${p.name}</b></div><div>${p.price} ₸</div>`;
-        container.appendChild(div);
-      });
-    }
+<script>
+const allProducts = [{"name": "Arzu 1l", "price": 500}, {"name": "BUZZ", "price": 650}, {"name": "COLA 1L", "price": 900}, {"name": "Coca-cola 0.5", "price": 550}, {"name": "FANTA", "price": 550}, {"name": "FANTA 1L", "price": 900}, {"name": "FUSE TEA 1L", "price": 900}, {"name": "Fuse tea 0.5", "price": 550}, {"name": "GS лимонад + тархун", "price": 650}, {"name": "KINDER/M&M/KITKAT", "price": 700}, {"name": "Piko 0.5", "price": 650}, {"name": "Qazaq-Food Казы", "price": 0}, {"name": "Qazaq-Food Колбаса", "price": 0}, {"name": "SPRITE 1L", "price": 900}, {"name": "Vitamin C", "price": 400}, {"name": "arzu 0.5", "price": 300}, {"name": "Bonaqua 1l", "price": 500}, {"name": "Cola Zero 0.450", "price": 550}, {"name": "Dizzy", "price": 550}, {"name": "Gorilla", "price": 750}, {"name": "pepsi", "price": 550}, {"name": "Redbull", "price": 1000}, {"name": "sprite 05", "price": 550}, {"name": "Albeni", "price": 500}, {"name": "Бургер Камди Black, Хот-Дог", "price": 1500}, {"name": "Бургер Шокупан, Сэндвич", "price": 1300}, {"name": "Бургер БАО, Puff", "price": 1400}, {"name": "Гранат ПЛАСТ", "price": 400}, {"name": "ЕДА Only Staff", "price": 900}, {"name": "ЕЕ БАНАН", "price": 650}, {"name": "Клаб-Сэндвич", "price": 1400}, {"name": "Мохито", "price": 550}, {"name": "Панини", "price": 1500}, {"name": "Пицца TOYASYN", "price": 1200}, {"name": "Сникерс/Твикс", "price": 600}, {"name": "Френч-дог ризык", "price": 1000}, {"name": "Сэндвич/Панини TIMAKHOVSKI", "price": 650}];
+const categoryMap = {"напитки": ["Arzu 1l", "BUZZ", "COLA 1L", "Coca-cola 0.5", "FANTA", "FANTA 1L", "FUSE TEA 1L", "Fuse tea 0.5", "GS лимонад + тархун", "Piko 0.5", "SPRITE 1L", "Vitamin C", "arzu 0.5", "Bonaqua 1l", "Cola Zero 0.450", "Dizzy", "Gorilla", "pepsi", "Redbull", "sprite 05", "Гранат ПЛАСТ", "ЕЕ БАНАН", "Мохито"], "еда": ["Qazaq-Food Казы", "Qazaq-Food Колбаса", "Бургер Камди Black, Хот-Дог", "Бургер Шокупан, Сэндвич", "Бургер БАО, Puff", "ЕДА Only Staff", "Клаб-Сэндвич", "Панини", "Пицца TOYASYN", "Френч-дог ризык", "Сэндвич/Панини TIMAKHOVSKI"], "шоколадки": ["KINDER/M&M/KITKAT", "Albeni", "Сникерс/Твикс"]};
+let selectedCategory = 'все';
+let cart = {};
+let currentUser = null;
 
-    setCategory('все');
-  </script>
+const users = {
+  "Zhanik": "1234", "Dias": "1234", "Sanzhar": "1234",
+  "Bekzat": "1234", "Elaman": "1234", "Kaisar": "1234", "Sultan": "1234"
+};
+
+function login() {
+  const user = document.getElementById("username").value;
+  const pass = document.getElementById("password").value;
+  if (users[user] === pass) {
+    currentUser = user;
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("mainSection").classList.remove("hidden");
+    setCategory("все");
+  } else {
+    alert("Неверные данные");
+  }
+}
+
+function setCategory(cat) {
+  selectedCategory = cat;
+  const filtered = allProducts.filter(p =>
+    selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name)
+  );
+  renderProducts(filtered);
+}
+
+function renderProducts(list) {
+  const container = document.getElementById("productList");
+  container.innerHTML = "";
+  list.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "product";
+    div.innerHTML = `
+      <div><b>${p.name}</b></div>
+      <div>${p.price} ₸</div>
+      <button onclick="addToCart('${p.name}', ${p.price})">Добавить</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function addToCart(name, price) {
+  if (!cart[name]) cart[name] = { qty: 0, price: price };
+  cart[name].qty++;
+  updateCart();
+}
+
+function updateCart() {
+  const c = document.getElementById("cartList");
+  c.innerHTML = "<h3>🛒 Корзина</h3>";
+  let total = 0;
+  for (const name in cart) {
+    const item = cart[name];
+    total += item.qty * item.price;
+    c.innerHTML += `<div>${name} x${item.qty} — ${item.qty * item.price} ₸</div>`;
+  }
+  c.innerHTML += `<div><b>Итого: ${total} ₸</b></div>`;
+}
+
+function submitOrder() {
+  if (!currentUser || Object.keys(cart).length === 0) return alert("Пусто");
+
+  const now = new Date().toLocaleString('ru-RU');
+  const id = Date.now();
+  const data = { id, user: currentUser, items: cart, date: now };
+
+  fetch("https://bardate-6da25-default-rtdb.europe-west1.firebasedatabase.app/requests.json", {
+    method: "POST",
+    body: JSON.stringify(data)
+  }).then(() => {
+    cart = {};
+    updateCart();
+    alert("📤 Заказ отправлен");
+  });
+}
+</script>
 </body>
 </html>
