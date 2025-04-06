@@ -123,6 +123,10 @@ async function loadProducts() {
   allProducts = await res.json();
   filterProducts();
 }
+  const res = await fetch("товары.json");
+  allProducts = await res.json();
+  renderProducts(allProducts);
+}
 
 function renderProducts(list) {
   const container = document.getElementById("productList");
@@ -140,6 +144,12 @@ function renderProducts(list) {
 }
 
 function filterProducts() {
+  const term = document.getElementById("search").value.toLowerCase();
+  const filtered = allProducts
+    .filter(p => selectedCategory === 'все' || (categoryMap[selectedCategory] || []).includes(p.name))
+    .filter(p => p.name.toLowerCase().includes(term));
+  renderProducts(filtered);
+}
   const term = document.getElementById("search").value.toLowerCase();
   renderProducts(allProducts.filter(p => p.name.toLowerCase().includes(term)));
 }
