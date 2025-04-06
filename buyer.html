@@ -1,3 +1,4 @@
+<!-- buyer.html с Face ID / автозаполнением -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -18,13 +19,6 @@
       background: #000; color: #fff; font-family: sans-serif;
       touch-action: manipulation;
     }
-    #splash {
-      position: fixed;
-      inset: 0;
-      background: url('assets/apple-splash-1125x2436-dark.png') center center no-repeat;
-      background-size: cover;
-      z-index: 9999;
-    }
     .auth-screen {
       position: fixed;
       top: 50%; left: 50%;
@@ -35,23 +29,24 @@
       gap: 10px;
     }
     input, button {
-      padding: 10px; font-size: 18px;
+      padding: 6px 10px; font-size: 16px;
       border-radius: 8px; border: none;
       width: 80vw; max-width: 300px;
     }
-    .main { padding: 10px; }
-    .products { max-height: 45vh; overflow-y: auto; }
-    .product { background: #111; margin-bottom: 6px; padding: 10px; border-radius: 8px; }
-    .cart { max-height: 30vh; overflow-y: auto; background: #111; padding: 10px; margin-top: 10px; }
+    .main { padding: 10px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+    .products { flex: 1; overflow-y: auto; padding-bottom: 10px; }
+    .product {
+      background: #111; margin-bottom: 6px; padding: 10px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cart { background: #111; padding: 10px; margin-top: 10px; max-height: 40vh; overflow-y: auto; }
   </style>
 </head>
 <body>
-  <div id="splash"></div>
   <audio id="ping" src="assets/ping.mp3" preload="auto"></audio>
-
   <div class="auth-screen" id="authScreen" style="display:none">
-    <input type="text" id="loginName" placeholder="Имя" />
-    <input type="password" id="loginPass" placeholder="Пароль" />
+    <input type="text" id="loginName" name="username" autocomplete="username" placeholder="Имя" />
+    <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="Пароль" />
     <button onclick="login()">Войти</button>
   </div>
 
@@ -74,13 +69,16 @@
 let user = null;
 let cart = [];
 let allProducts = [];
-let autoClearTimer = null;
 
 window.onload = () => {
+  document.getElementById("authScreen").style.display = "flex";
+
+  // ⏳ Автовход через автозаполнение FaceID/TouchID
   setTimeout(() => {
-    document.getElementById("splash").style.display = "none";
-    document.getElementById("authScreen").style.display = "flex";
-  }, 3000);
+    const name = document.getElementById("loginName").value;
+    const pass = document.getElementById("loginPass").value;
+    if (name && pass) login();
+  }, 500);
 };
 
 function login() {
@@ -91,9 +89,8 @@ function login() {
     if (found) {
       user = found.name;
       document.getElementById("authScreen").style.display = "none";
-      document.getElementById("mainScreen").style.display = "block";
+      document.getElementById("mainScreen").style.display = "flex";
       document.getElementById("username").innerText = user;
-      resetTimer();
     } else alert("Неверные данные");
   });
 }
@@ -110,9 +107,11 @@ function renderProducts(list) {
   list.forEach(p => {
     const el = document.createElement("div");
     el.className = "product";
-    el.innerHTML = `<b>${p.name}</b><br>${p.price} ₸<br>
+    el.innerHTML = `
       <button onclick='changeQty(${JSON.stringify(p)}, -1)'>➖</button>
-      <button onclick='changeQty(${JSON.stringify(p)}, 1)'>➕</button>`;
+      <div><b>${p.name}</b><br>${p.price} ₸</div>
+      <button onclick='changeQty(${JSON.stringify(p)}, 1)'>➕</button>
+    `;
     container.appendChild(el);
   });
 }
@@ -132,7 +131,6 @@ function changeQty(product, delta) {
     cart.push(product);
   }
   renderCart();
-  resetTimer();
 }
 
 function renderCart() {
@@ -156,24 +154,14 @@ function sendOrder() {
     timestamp: Date.now()
   };
 
-  // Firebase only, cashier will send to Telegram later
   db.ref("orders").push(order).then(() => {
     document.getElementById("ping").play();
     alert("Заказ отправлен кассиру!");
     cart = [];
     renderCart();
-    resetTimer();
   }).catch(() => alert("Ошибка сервера: не удалось отправить"));
 }
 
-function resetTimer() {
-  if (autoClearTimer) clearTimeout(autoClearTimer);
-  autoClearTimer = setTimeout(() => {
-    cart = [];
-    renderCart();
-    alert("Корзина очищена по таймеру 🕒");
-  }, 300000);
-}
 loadProducts();
 </script>
 </body>
