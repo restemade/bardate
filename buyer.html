@@ -177,6 +177,25 @@ function sendOrder() {
   };
 
   db.ref("orders").push(order).then(() => {
+
+  let orderId = parseInt(localStorage.getItem("orderId") || "1000", 10);
+  localStorage.setItem("orderId", (orderId + 1).toString());
+
+  const date = new Date(order.timestamp).toLocaleString("ru-RU");
+  const text =
+    `❗Заказ\n📥 От ${user}\n🕒 ${date}\n` +
+    cart.map(i => `- ${i.name} ${i.count} (${i.price * i.count} ₸)`).join("\n") +
+    `\n\n💰 Итого: ${order.total} ₸\n🧾 #${orderId}`;
+
+  fetch("https://api.telegram.org/bot8132090842:AAE3z3SNMV2z8V4ord_YE7zfo0uPLrL86lo/sendMessage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: "@humbleloungee",
+      text
+    })
+  });
+
     document.getElementById("ping").play();
     alert("Заказ отправлен кассиру!");
     cart = [];
